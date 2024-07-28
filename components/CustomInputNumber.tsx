@@ -7,7 +7,7 @@ interface CustomInputNumberProps {
   name: string;
   value: number;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur: () => void;
+  onBlur: (event: React.ChangeEvent<HTMLInputElement>) => void;
   disableMinus?: boolean;
   disablePlus?: boolean;
 }
@@ -35,6 +35,10 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
     onChange(e);
   };
 
+  const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onBlur(e);
+  };
+
   return (
     <div className="flex items-center space-x-2">
       <button
@@ -60,7 +64,7 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
         name={name}
         value={internalValue}
         onChange={handleChange}
-        onBlur={onBlur}
+        onBlur={handleBlur}
         className="w-16 h-12 text-center border border-gray-300 rounded-lg"
       />
       <button

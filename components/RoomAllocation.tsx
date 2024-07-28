@@ -75,6 +75,11 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
     );
   };
 
+  const handleBlur = (index, type, event) => {
+    const newValue = parseInt(event.target.value, 10) || 0;
+    handleAllocationChange(index, type, newValue);
+  };
+
   const getValidMax = (capacity, otherTypeCount) => {
     const max = capacity - otherTypeCount;
     return Number.isNaN(max) || max < 0 ? 0 : max;
@@ -137,7 +142,13 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
                     parseInt(e.target.value, 10) || 0
                   )
                 }
-                onBlur={() => {}}
+                onBlur={() =>
+                  handleBlur(
+                    index,
+                    "children",
+                    parseInt(e.target.value, 10) || 0
+                  )
+                }
                 disableMinus={
                   remainingChildren <= 0 && allocation.children === 0
                 }
