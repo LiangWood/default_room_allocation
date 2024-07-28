@@ -7,9 +7,10 @@ interface CustomInputNumberProps {
   name: string;
   value: number;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
   disableMinus?: boolean;
   disablePlus?: boolean;
+  disabled?: boolean;
 }
 
 const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
@@ -22,6 +23,7 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
   onBlur,
   disableMinus,
   disablePlus,
+  disabled,
 }) => {
   const [internalValue, setInternalValue] = useState(value);
 
@@ -35,10 +37,6 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
     onChange(e);
   };
 
-  const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onBlur(e);
-  };
-
   return (
     <div className="flex items-center space-x-2">
       <button
@@ -48,7 +46,7 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
             const newValue = internalValue - step;
             setInternalValue(newValue);
             onChange({
-              target: { value: newValue, name },
+              target: { value: newValue.toString(), name },
             } as React.ChangeEvent<HTMLInputElement>);
           }
         }}
@@ -64,8 +62,9 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
         name={name}
         value={internalValue}
         onChange={handleChange}
-        onBlur={handleBlur}
-        className="w-16 h-12 text-center border border-gray-300 rounded-lg"
+        onBlur={() => setInternalValue(value)}
+        disabled={disabled}
+        className="w-12 h-12 text-center border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:text-gray-400"
       />
       <button
         className="w-12 h-12 flex items-center justify-center text-2xl border border-blue-300 text-blue-500 rounded-lg bg-transparent hover:bg-blue-100 disabled:bg-gray-200 disabled:text-gray-400 disabled:border-gray-200"
@@ -74,7 +73,7 @@ const CustomInputNumber: React.FC<CustomInputNumberProps> = ({
             const newValue = internalValue + step;
             setInternalValue(newValue);
             onChange({
-              target: { value: newValue, name },
+              target: { value: newValue.toString(), name },
             } as React.ChangeEvent<HTMLInputElement>);
           }
         }}

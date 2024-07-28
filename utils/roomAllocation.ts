@@ -19,28 +19,5 @@ export const getDefaultRoomAllocation = (guest, rooms) => {
             allocation.price += allocation.adultPrice;
         }
     }
-
-    // 分配小孩
-    // for (let allocation of allocations) {
-    //     while (remainingChildren > 0 && allocation.children < allocation.capacity) {
-    //         allocation.children++;
-    //         remainingChildren--;
-    //         allocation.price += allocation.childPrice;
-    //     }
-    // }
-
-    // 分配剩餘的大人
-    // for (let allocation of allocations) {
-    //     while (remainingAdults > 0 && (allocation.adults + allocation.children) < allocation.capacity) {
-    //         allocation.adults++;
-    //         remainingAdults--;
-    //         allocation.price += allocation.adultPrice;
-    //     }
-    // }
-
-    // 檢查是否所有人都分配
-    // if (remainingAdults > 0 || remainingChildren > 0) {
-    //     return []; // 如果無法都分配到，則返回空陣列
-    // }
     return allocations;
 };

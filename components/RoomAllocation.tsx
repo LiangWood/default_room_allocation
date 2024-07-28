@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import CustomInputNumber from "./CustomInputNumber";
 import { getDefaultRoomAllocation } from "../utils/roomAllocation";
 
@@ -7,14 +7,19 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
   const totalChildren = Number(guest.child) || 0;
   const initialAllocations = getDefaultRoomAllocation(guest, rooms);
 
-  const initialAdultsAllocated = initialAllocations.reduce(
-    (sum, room) => sum + (Number(room.adults) || 0),
-    0
-  );
-  const initialChildrenAllocated = initialAllocations.reduce(
-    (sum, room) => sum + (Number(room.children) || 0),
-    0
-  );
+  const initialAdultsAllocated = useMemo(() => {
+    return initialAllocations.reduce(
+      (sum, room) => sum + (Number(room.adults) || 0),
+      0
+    );
+  }, [initialAllocations]);
+
+  const initialChildrenAllocated = useMemo(() => {
+    return initialAllocations.reduce(
+      (sum, room) => sum + (Number(room.children) || 0),
+      0
+    );
+  }, [initialAllocations]);
 
   const [allocations, setAllocations] = useState(initialAllocations);
   const [remainingAdults, setRemainingAdults] = useState(
@@ -28,34 +33,42 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
     const newAllocations = getDefaultRoomAllocation(guest, rooms);
     setAllocations(newAllocations);
 
-    const adultsAllocated = newAllocations.reduce(
-      (sum, room) => sum + (Number(room.adults) || 0),
-      0
-    );
-    const childrenAllocated = newAllocations.reduce(
-      (sum, room) => sum + (Number(room.children) || 0),
-      0
-    );
+    setRemainingAdults(Math.max(totalAdults - initialAdultsAllocated, 0));
+    setRemainingChildren(Math.max(totalChildren - initialChildrenAllocated, 0));
+  }, [guest, rooms, totalAdults, totalChildren]);
 
-    setRemainingAdults(Math.max(totalAdults - adultsAllocated, 0));
-    setRemainingChildren(Math.max(totalChildren - childrenAllocated, 0));
+  const getValidatedValue = (index, type, value) => {
+    const newValue = Math.max(0, value);
+    const allocation = allocations[index];
+    const previousValue = Number(allocation[type]) || 0;
+    const remainingCount =
+      type === "adults" ? remainingAdults : remainingChildren;
+    const otherTypeCount =
+      type === "adults" ? allocation.children : allocation.adults;
+    const maxValidValue = getValidMax(allocation.capacity, otherTypeCount);
 
-    onChange(
-      newAllocations.map(
-        ({ roomPrice, adultPrice, childPrice, ...rest }) => rest
-      )
-    );
-  }, [guest, rooms, onChange, totalAdults, totalChildren]);
+    if (newValue > maxValidValue || newValue > remainingCount + previousValue) {
+      return 1;
+    }
+
+    return newValue;
+  };
 
   const handleAllocationChange = (index, type, value) => {
-    const newValue = Math.max(0, value); // 確保值不能為負數
+    let newValue = getValidatedValue(index, type, value);
     const newAllocations = [...allocations];
     const previousValue = Number(newAllocations[index][type]) || 0;
     const delta = newValue - previousValue;
 
     if (type === "adults") {
+      if (newValue > remainingAdults + previousValue) {
+        newValue = 1;
+      }
       setRemainingAdults((prev) => Math.max(prev - delta, 0));
     } else {
+      if (newValue > remainingChildren + previousValue) {
+        newValue = 0;
+      }
       setRemainingChildren((prev) => Math.max(prev - delta, 0));
     }
 
@@ -70,14 +83,15 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
     setAllocations(newAllocations);
     onChange(
       newAllocations.map(
-        ({ roomPrice, adultPrice, childPrice, capacity, ...rest }) => rest
+        ({ roomPrice, adultPrice, childPrice, ...rest }) => rest
       )
     );
   };
 
-  const handleBlur = (index, type, event) => {
-    const newValue = parseInt(event.target.value, 10) || 0;
-    handleAllocationChange(index, type, newValue);
+  const handleBlur = (index, type) => {
+    const newValue = Number(allocations[index][type]) || 1;
+    const validatedValue = getValidatedValue(index, type, newValue);
+    handleAllocationChange(index, type, validatedValue);
   };
 
   const getValidMax = (capacity, otherTypeCount) => {
@@ -106,11 +120,11 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
             </div>
             <div className="flex items-center space-x-2">
               <CustomInputNumber
-                min={1} // 設置最小值為1
+                min={1}
                 max={getValidMax(allocation.capacity, allocation.children)}
                 step={1}
                 name={`adults-${index}`}
-                value={Number(allocation.adults) || 1} // 初始化為1
+                value={Number(allocation.adults) || 1}
                 onChange={(e) =>
                   handleAllocationChange(
                     index,
@@ -118,7 +132,7 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
                     parseInt(e.target.value, 10) || 1
                   )
                 }
-                onBlur={() => {}}
+                onBlur={(e) => handleBlur(index, "adults")}
                 disableMinus={remainingAdults <= 0 && allocation.adults === 1}
                 disablePlus={remainingAdults <= 0}
               />
@@ -142,17 +156,12 @@ const RoomAllocation = ({ guest, rooms, onChange }) => {
                     parseInt(e.target.value, 10) || 0
                   )
                 }
-                onBlur={() =>
-                  handleBlur(
-                    index,
-                    "children",
-                    parseInt(e.target.value, 10) || 0
-                  )
-                }
+                onBlur={(e) => handleBlur(index, "children")}
                 disableMinus={
                   remainingChildren <= 0 && allocation.children === 0
                 }
                 disablePlus={remainingChildren <= 0}
+                disabled={totalChildren === 0}
               />
             </div>
           </div>
